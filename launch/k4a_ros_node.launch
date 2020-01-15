@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<launch>
+
+  <node pkg="k4a-ros" type="k4a_ros_node" name="k4a_ros_node" respawn="true" output="screen">
+  </node>
+
+  <node pkg="rviz" type="rviz" name="rviz" respawn="false"
+  	args="-d $(find k4a-ros)/rviz/k4a_ros_node.rviz" output="screen">
+  </node>
+
+</launch>
