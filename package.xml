@@ -1,41 +1,34 @@
 <?xml version="1.0"?>
-<package>
-	<name>k4a-ros</name>
-	<version>1.0.0</version>
-	<description>
-		Kinect 4 Azure ros package using Azure-Kinect-Sensor-SDK.
-	</description>
+<package format="3">
+  <name>k4a_ros</name>
+  <version>2.0.0</version>
+  <description>ROS 2 driver for Azure Kinect DK using Azure Kinect Sensor SDK.</description>
 
-	<maintainer email="chaiziqi@sjtu.edu.cn"> Ziqi CHAI</maintainer>
+  <maintainer email="chaiziqi@sjtu.edu.cn">Ziqi CHAI</maintainer>
+  <license>BSD-3-Clause</license>
 
-	<license>BSD</license>
+  <url type="repository">https://github.com/ZiqiChai/k4a-ros</url>
 
-	<url type="website"> https://github.com/ZiqiChai/k4a-ros </url>
+  <buildtool_depend>ament_cmake</buildtool_depend>
 
-	<author email="chaiziqi@sjtu.edu.cn"> Ziqi CHAI</author>
+  <depend>diagnostic_msgs</depend>
+  <depend>diagnostic_updater</depend>
+  <depend>geometry_msgs</depend>
+  <depend>image_transport</depend>
+  <depend>rclcpp</depend>
+  <depend>rclcpp_components</depend>
+  <depend>sensor_msgs</depend>
+  <depend>tf2</depend>
+  <depend>tf2_ros</depend>
 
-	<buildtool_depend>catkin</buildtool_depend>
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>rviz2</exec_depend>
 
-	<build_depend>roscpp</build_depend>
-	<build_depend>rospy</build_depend>
-	<build_depend>dynamic_reconfigure</build_depend>
-	<build_depend>message_generation</build_depend>
-	<build_depend>std_msgs</build_depend>
-	<build_depend>sensor_msgs</build_depend>
-	<build_depend>pcl_ros</build_depend>
-	<build_depend>pcl_conversions</build_depend>
-	<build_depend>image_transport</build_depend>
-	<build_depend>cv_bridge</build_depend>
+  <test_depend>ament_lint_common</test_depend>
 
-	<run_depend>roscpp</run_depend>
-	<run_depend>rospy</run_depend>
-	<run_depend>dynamic_reconfigure</run_depend>
-	<run_depend>message_runtime</run_depend>
-	<run_depend>std_msgs</run_depend>
-	<run_depend>sensor_msgs</run_depend>
-	<run_depend>pcl_ros</run_depend>
-	<run_depend>pcl_conversions</run_depend>
-	<run_depend>image_transport</run_depend>
-	<run_depend>cv_bridge</run_depend>
-
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
 </package>

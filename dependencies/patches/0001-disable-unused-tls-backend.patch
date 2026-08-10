@@ -1,0 +1,16 @@
+diff --git a/extern/azure_c_shared/src/adapters/platform_linux.c b/extern/azure_c_shared/src/adapters/platform_linux.c
+index 6da091b..2a760b4 100644
+--- a/extern/azure_c_shared/src/adapters/platform_linux.c
++++ b/extern/azure_c_shared/src/adapters/platform_linux.c
+@@ -55,7 +55,11 @@ const IO_INTERFACE_DESCRIPTION* platform_get_default_tlsio(void)
+ #elif USE_BEARSSL
+     return tlsio_bearssl_get_interface_description();
+ #else
++#ifdef USE_OPENSSL
+     // Default to openssl
+     return tlsio_openssl_get_interface_description();
++#else
++    return NULL;
++#endif
+ #endif
+ }

@@ -1,65 +1,79 @@
-### Overview
-This repository holds code of a [ROS](http://www.ros.org) package for data acquisition(color image, depth map and point cloud) with  [Kinect 4 Azure(https://azure.microsoft.com/en-us/services/kinect-dk/). It is basically a ROS wrapper of the low-level API provided by [Microsoft/Azure-Kinect-Sensor-SDK](https://microsoft.github.io/Azure-Kinect-Sensor-SDK/master/index.html), the manufacturer of the camera.
+# k4a-ros
 
-![rviz](./image/rviz.png)
+[![CI](https://github.com/ZiqiChai/k4a-ros/actions/workflows/ci.yml/badge.svg?branch=ubuntu-22.04-ros2-humble)](https://github.com/ZiqiChai/k4a-ros/actions/workflows/ci.yml)
 
-### Dependencies
-The package has been tested with the following dependencies:
-* Ubuntu 18.04
-* CMake version 3.10.2
-* gcc version 7.4.0
-* [ROS Melodic](http://wiki.ros.org/melodic/Installation/Ubuntu)
-* [Point Cloud Library v1.8](http://www.pointclouds.org/) (shipped with ROS Melodic)
-* Azure-Kinect-Sensor-SDK(https://github.com/Microsoft/Azure-Kinect-Sensor-SDK)
+Microsoft Azure Kinect DK 的独立 ROS 2 驱动，基于 Azure Kinect Sensor SDK 1.4.2，面向
+Ubuntu 22.04 amd64 与 ROS 2 Humble。
 
-### Download
-```shell
-$ git clone https://github.com/ZiqiChai/k4a-ros
+> Microsoft 已归档 Azure Kinect Sensor SDK，v1.4.2 是最后一个正式版本。本项目固定上游
+> tag、commit、下载 URL 与 SHA-256，并提供二进制部署、源码构建、离线缓存和 CI 验证。
+
+## 功能
+
+- RGB、Depth、IR 与对应 `CameraInfo`
+- Depth→Color、Color→Depth 标定对齐图像
+- Depth optical frame 下的有序 XYZRGB 点云（米）
+- IMU 与温度
+- 设备硬件时间戳映射 ROS clock，同一 capture 消息使用相同时间戳
+- 工厂标定静态 TF、`SensorDataQoS`、diagnostics
+- standalone node、ROS 2 component、多相机序号选择
+
+## 支持基线
+
+| 项目 | 支持范围 |
+|---|---|
+| OS / ROS | Ubuntu 22.04 / ROS 2 Humble |
+| 架构 | amd64 |
+| C++ | 默认 C++17；兼容 C++20；Humble 官方最低要求为 C++17 |
+| 编译器 | GCC、Clang；CI 同时验证 C++17，并额外验证 GCC/C++20 |
+| CMake | 项目声明最低 3.10；发布基线使用 Ubuntu 22.04 自带版本 |
+| SDK | Azure Kinect Sensor SDK 1.4.2 |
+
+本机真机基线已验证 RGB 1280×720、Depth/IR 640×576、30 FPS、aligned images、
+640×576 organized point cloud、IMU、TF 与 diagnostics。
+
+## 一键安装
+
+先按 [ROS 2 Humble 官方说明](https://docs.ros.org/en/humble/Installation/Ubuntu-Install-Debs.html)
+安装 ROS 2，然后：
+
+```bash
+git clone --branch ubuntu-22.04-ros2-humble \
+  https://github.com/ZiqiChai/k4a-ros.git
+cd k4a-ros
+./scripts/bootstrap.sh
 ```
 
-### Build
-```shell
-$ catkin_make
+脚本会安装系统/ROS 依赖、提示确认 Microsoft SDK runtime 许可、部署 SDK、安装 udev 规则并
+编译 ROS 包。完成后：
+
+```bash
+source /opt/ros/humble/setup.bash
+source scripts/env.sh
+source install/setup.bash
+ros2 launch k4a_ros k4a.launch.py use_rviz:=true
 ```
 
-### Execute
+已配置 udev 时可使用 `./scripts/bootstrap.sh --skip-udev`。完整选项与手动步骤见安装文档。
 
-1. Plug your camera correctly, in terms of power and signal
-2. Call the launch file.
-```shell
-$ roslaunch k4a-ros k4a_ros_node.launch
-```
-3. Or just run the ros node without rviz
-```shell
-$ rosrun k4a-ros k4a_ros_node
+真机一键检查：
+
+```bash
+./scripts/run_hardware_test.sh
 ```
 
+## 文档
 
-### Topic
-1. "k4a/color/color": color image (Frame is color sensor, format is bgr8)
-2. "k4a/color/color_to_depth": color image, aligned to depth map (Frame is depth sensor, format is bgr8)
+- [完整安装、源码编译与离线安装](docs/INSTALL.md)
+- [运行、Topics、参数与多相机](docs/USAGE.md)
+- [依赖锁定、缓存与镜像](docs/DEPENDENCIES.md)
+- [源码、预编译包与第三方二进制分发边界](docs/DISTRIBUTION.md)
+- [故障排查](docs/TROUBLESHOOTING.md)
+- [发布检查清单](docs/RELEASE_CHECKLIST.md)
+- [版本记录](CHANGELOG.md)
 
-3. "k4a/depth/depth": depth map (Frame is depth sensor, format is original 16UC1)
-4. "k4a/depth/depth_colorized": colorized depth map (Frame is depth sensor, format is bgra8)
-5. "k4a/depth/depth_to_color": depth map, aligned to color image (Frame is color sensor, format is original 16UC1)
-6. "k4a/depth/depth_to_color_colorized": colorized depth map, aligned to color image (Frame is color sensor, format is bgra8)
+## 许可证
 
-7. "k4a/ir_image": ir image (Frame is depth sensor, format is original 16UC1)
-
-8. "k4a/point_cloud/point_cloud_depth_to_depth": PCL point cloud with PointXYZ, this is converted from original depth map. (Frame is depth sensor, unit is millimeter)
-9. "k4a/point_cloud/point_cloud_color_to_depth": PCL point cloud with PointXYZRGB, this is converted by aligning color image to original depth map.(Frame is depth sensor, unit is millimeter)
-10. "k4a/point_cloud/point_cloud_depth_to_color": PCL point cloud with PointXYZRGB, this is converted by aligning depth map to original color image .(Frame is color sensor, unit is millimeter)
-
-
-## References
-* KinectAzureDKProgramming
-
-  https://github.com/forestsen/KinectAzureDKProgramming
-
-* Kinect2Grabber
-
-  https://github.com/UnaNancyOwen/KinectGrabber
-
-* Kinect Azure DK SDK
-
-  https://github.com/microsoft/Azure-Kinect-Sensor-SDK
+本项目使用 [BSD-3-Clause](LICENSE)。Azure Kinect SDK 源码、官方 runtime、Depth Engine 及其
+第三方组件保留各自许可。闭源 SDK 二进制不进入本仓库或本项目预编译包，由安装脚本在用户明确
+接受 Microsoft 许可后从固定来源下载和校验。

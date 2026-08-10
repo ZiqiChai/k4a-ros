@@ -1,0 +1,24 @@
+/**:
+  ros__parameters:
+    device_id: 0
+    serial_number: ""
+
+    color_enabled: true
+    depth_enabled: true
+    ir_enabled: true
+    imu_enabled: true
+    point_cloud_enabled: true
+    aligned_depth_enabled: true
+    aligned_color_enabled: true
+
+    color_resolution: "720p"
+    depth_mode: "nfov_unbinned"
+    fps: 30
+    capture_timeout_ms: 1000
+
+    depth_frame_id: "k4a_depth_camera_optical_frame"
+    color_frame_id: "k4a_color_camera_optical_frame"
+    imu_frame_id: "k4a_imu_frame"
+    publish_tf: true
+
+    diagnostic_updater.period: 1.0

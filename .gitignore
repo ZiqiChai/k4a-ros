@@ -1,0 +1,13 @@
+/build/
+/install/
+/log/
+/.deps/
+/dist/
+/.release/
+/dependencies/cache/
+/.colcon/
+*.mkv
+*.pcd
+*.ply
+__pycache__/
+*.pyc
