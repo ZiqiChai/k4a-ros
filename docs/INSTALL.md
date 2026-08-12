@@ -20,28 +20,36 @@ ros2 --help
 printenv ROS_DISTRO
 ```
 
-最后一条应输出 `humble`。Humble 的目标平台是 Ubuntu 22.04；不要在 24.04 上强装本分支。
+最后一条应输出 `humble`。Humble 的目标平台是 Ubuntu 22.04；不要在 24.04 上强装当前版本。
 
-## 2. 获取正确分支
+## 2. 获取仓库
 
-全新克隆推荐直接指定分支：
+`main` 是默认开发、文档和发布入口。全新克隆无需指定分支：
 
 ```bash
-git clone --branch ubuntu-22.04-ros2-humble \
-  https://github.com/ZiqiChai/k4a-ros.git
+git clone https://github.com/ZiqiChai/k4a-ros.git
 cd k4a-ros
 git branch --show-current
 ```
 
-已有 clone：
+输出应为 `main`。已有 clone 更新主线：
 
 ```bash
 cd k4a-ros
-git fetch origin
-git switch ubuntu-22.04-ros2-humble
+git fetch origin --prune
+git switch main
+git pull --ff-only
 ```
 
-输出应为 `ubuntu-22.04-ros2-humble`。
+需要固定在 Ubuntu 22.04 / ROS 2 Humble 稳定维护线时，可改用：
+
+```bash
+git clone --branch ubuntu-22.04-ros2-humble \
+  https://github.com/ZiqiChai/k4a-ros.git
+```
+
+历史 Ubuntu 18.04 / ROS Melodic 实现保存在 `ubuntu-18.04-ros1-melodic`，其安装方式以该分支
+自身文档为准；本手册只适用于当前 ROS 2 实现。
 
 ## 3. 安装 ROS 包构建依赖
 
@@ -104,7 +112,7 @@ source scripts/env.sh
 ```
 
 > Ubuntu 18.04 版 `k4aviewer` 依赖旧 ABI `libsoundio.so.1`，Jammy 默认只提供
-> `libsoundio.so.2`，因此 viewer 不属于本分支的推荐验证路径。`k4arecorder --list`、ROS 2
+> `libsoundio.so.2`，因此 viewer 不属于当前版本的推荐验证路径。`k4arecorder --list`、ROS 2
 > driver 和 RViz2 不受影响；不要把 `libsoundio.so.2` 伪装成 `.so.1`。
 
 ### 路线 B：源码编译核心 SDK

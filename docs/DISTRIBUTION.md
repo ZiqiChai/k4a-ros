@@ -24,11 +24,13 @@ Microsoft 软件许可。其 `REDIST.txt` 列出 `libk4a`、`libk4arecord` 和 D
 安装 ROS 2 Humble 后：
 
 ```bash
-git clone --branch ubuntu-22.04-ros2-humble \
-  https://github.com/ZiqiChai/k4a-ros.git
+git clone https://github.com/ZiqiChai/k4a-ros.git
 cd k4a-ros
 ./scripts/bootstrap.sh
 ```
+
+以上默认获取 `main`。需要固定 Ubuntu 22.04 / ROS 2 Humble 稳定维护线时，clone 时增加
+`--branch ubuntu-22.04-ros2-humble`。
 
 对于已准备好依赖缓存和 udev 的离线机器：
 

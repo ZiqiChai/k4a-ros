@@ -1,6 +1,6 @@
 # k4a-ros
 
-[![CI](https://github.com/ZiqiChai/k4a-ros/actions/workflows/ci.yml/badge.svg?branch=ubuntu-22.04-ros2-humble)](https://github.com/ZiqiChai/k4a-ros/actions/workflows/ci.yml)
+[![CI](https://github.com/ZiqiChai/k4a-ros/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ZiqiChai/k4a-ros/actions/workflows/ci.yml)
 
 Microsoft Azure Kinect DK 的独立 ROS 2 驱动，基于 Azure Kinect Sensor SDK 1.4.2，面向
 Ubuntu 22.04 amd64 与 ROS 2 Humble。
@@ -32,14 +32,21 @@ Ubuntu 22.04 amd64 与 ROS 2 Humble。
 本机真机基线已验证 RGB 1280×720、Depth/IR 640×576、30 FPS、aligned images、
 640×576 organized point cloud、IMU、TF 与 diagnostics。
 
+## 分支
+
+| 分支 | 定位 |
+|---|---|
+| `main` | 默认开发、文档和发布入口；当前基线为 Ubuntu 22.04 / ROS 2 Humble |
+| `ubuntu-22.04-ros2-humble` | Ubuntu 22.04 / ROS 2 Humble 稳定维护线 |
+| `ubuntu-18.04-ros1-melodic` | Ubuntu 18.04 / ROS Melodic 历史归档；使用该分支自身文档 |
+
 ## 一键安装
 
 先按 [ROS 2 Humble 官方说明](https://docs.ros.org/en/humble/Installation/Ubuntu-Install-Debs.html)
 安装 ROS 2，然后：
 
 ```bash
-git clone --branch ubuntu-22.04-ros2-humble \
-  https://github.com/ZiqiChai/k4a-ros.git
+git clone https://github.com/ZiqiChai/k4a-ros.git
 cd k4a-ros
 ./scripts/bootstrap.sh
 ```
