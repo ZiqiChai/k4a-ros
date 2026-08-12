@@ -136,7 +136,7 @@ jobs:
           apt-get update
           apt-get install -y --no-install-recommends \
             build-essential cmake curl git libgl1-mesa-dev libopencv-dev \
-            libsoundio-dev libudev-dev libusb-1.0-0-dev libvulkan-dev \
+            libsoundio-dev libudev-dev libusb-1.0-0-dev libvulkan-dev uuid-dev \
             libx11-dev libxcursor-dev libxinerama-dev libxrandr-dev \
             libxxf86vm-dev pkg-config python3-colcon-common-extensions python3-rosdep
 

@@ -121,6 +121,7 @@ if [[ "${skip_system_deps}" == "false" ]]; then
       libudev-dev
       libusb-1.0-0-dev
       libvulkan-dev
+      uuid-dev
       libx11-dev
       libxcursor-dev
       libxinerama-dev
