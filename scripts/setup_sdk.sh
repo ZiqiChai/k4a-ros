@@ -174,7 +174,11 @@ prepare_source() {
         exit 1
       fi
       mkdir -p "$(dirname -- "${checkout}")"
-      git clone --branch "${SDK_GIT_TAG}" --recursive "${git_repository}" "${checkout}"
+      # prepare_source returns the checkout path on stdout. Keep Git's
+      # submodule checkout messages on stderr so command substitution cannot
+      # mix them into that path in CI.
+      git clone --branch "${SDK_GIT_TAG}" --recursive \
+        "${git_repository}" "${checkout}" >&2
     fi
   fi
 
