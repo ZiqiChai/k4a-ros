@@ -31,7 +31,7 @@ jobs:
       - name: Validate release tag
         if: github.event_name == 'push'
         run: |
-          package_version="$(sed -n 's:.*<version>\([^<]*\)</version>.*:\1:p' package.xml | head -n 1)"
+          package_version="$(sed -n 's:.*<version>\([^<]*\)</version>.*:\1:p' k4a_ros/package.xml | head -n 1)"
           test "${GITHUB_REF_NAME}" = "v${package_version}"
 
       - name: Install build and release tools
@@ -46,7 +46,7 @@ jobs:
           source /opt/ros/humble/setup.bash
           test -f /etc/ros/rosdep/sources.list.d/20-default.list || rosdep init
           rosdep update
-          rosdep install --from-paths . --ignore-src --rosdistro humble -r -y
+          rosdep install --from-paths k4a_ros --ignore-src --rosdistro humble -r -y
 
       - name: Install verified SDK binaries
         run: ./scripts/setup_sdk.sh --accept-sdk-license

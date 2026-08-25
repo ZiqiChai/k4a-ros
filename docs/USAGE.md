@@ -7,23 +7,18 @@
 ```bash
 cd k4a-ros
 source /opt/ros/humble/setup.bash
-source scripts/env.sh
-source install/setup.bash
+source scripts/env.sh        # SDK 运行库路径
+source install/setup.bash    # 工作空间
 ```
 
-默认启动：
+默认启动（可选同时启动项目自带 RViz2 配置）：
 
 ```bash
 ros2 launch k4a_ros k4a.launch.py
-```
-
-同时启动项目自带 RViz2 配置：
-
-```bash
 ros2 launch k4a_ros k4a.launch.py use_rviz:=true
 ```
 
-指定 namespace 和配置文件：
+指定 namespace 和自定义参数文件：
 
 ```bash
 ros2 launch k4a_ros k4a.launch.py \
@@ -31,7 +26,7 @@ ros2 launch k4a_ros k4a.launch.py \
   params_file:=/absolute/path/to/front_k4a.yaml
 ```
 
-直接运行 standalone node：
+也可以直接运行 standalone node 或 component：
 
 ```bash
 ros2 run k4a_ros k4a_driver_node --ros-args \
@@ -39,7 +34,7 @@ ros2 run k4a_ros k4a_driver_node --ros-args \
   --params-file "$(ros2 pkg prefix k4a_ros)/share/k4a_ros/config/k4a.yaml"
 ```
 
-注册的 component plugin 为 `k4a_ros::K4ADriverNode`，项目同时安装可直接运行的
+component plugin 为 `k4a_ros::K4ADriverNode`，同时安装了可直接运行的
 `k4a_driver_component_node`。
 
 ## Topics
@@ -68,7 +63,7 @@ x 向右、y 向下、z 向前。
 
 ## 参数
 
-默认值见 [`config/k4a.yaml`](../config/k4a.yaml)。
+默认值见 [`k4a_ros/config/k4a.yaml`](../k4a_ros/config/k4a.yaml)。
 
 | 参数 | 默认值 | 说明 |
 |---|---:|---|

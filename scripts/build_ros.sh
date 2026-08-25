@@ -19,7 +19,7 @@ set -u
 source "${SCRIPT_DIR}/env.sh"
 
 cd "${PROJECT_DIR}"
-colcon build --base-paths "${PROJECT_DIR}" --packages-select k4a_ros \
+colcon build --base-paths "${PROJECT_DIR}/k4a_ros" --packages-select k4a_ros \
   --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release "$@"
 
 echo "Build completed. Run: source ${PROJECT_DIR}/install/setup.bash"

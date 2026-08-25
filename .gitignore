@@ -11,3 +11,8 @@
 *.ply
 __pycache__/
 *.pyc
+
+# local diagnostics / IDE artifacts
+.qoder/
+.hw_*
+.k4a_*.log

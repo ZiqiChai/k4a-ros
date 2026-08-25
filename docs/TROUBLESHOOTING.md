@@ -34,6 +34,8 @@ find "$K4A_SDK_ROOT" -name k4aConfig.cmake
 ```
 
 每个新终端都必须重新 `source scripts/env.sh`，并且要在调用 `colcon build` 之前执行。
+不想维护这层环境时，可改用系统安装：`./scripts/setup_sdk.sh --method system`，之后
+CMake 与链接器都能直接找到 SDK。
 
 ## 找不到 `libdepthengine.so.2.0` 或 `libk4a.so.1.4`
 
@@ -81,12 +83,16 @@ ros2 topic hz /k4a/depth/image_raw
 ## 参数组合不受支持
 
 SDK 会在 `k4a_device_start_cameras` 阶段拒绝不支持的 resolution/depth mode/FPS 组合。
-先使用 [`config/k4a.yaml`](../config/k4a.yaml) 的默认值确认硬件正常，再逐项调整。
+先使用 [`k4a_ros/config/k4a.yaml`](../k4a_ros/config/k4a.yaml) 的默认值确认硬件正常，再逐项调整。
 
 ## RViz2 看不到图像或点云
 
 - 确认 Fixed Frame 是 `k4a_depth_camera_optical_frame`。
-- 图像/点云使用 `SensorDataQoS`；自定义订阅者应使用 best-effort sensor data QoS。
+- 图像/点云使用 `SensorDataQoS`。在 RViz2 手动添加 Image 或 PointCloud2 display 时，将
+  Reliability Policy 设为 `Best Effort`；使用默认的 `Reliable` 会出现
+  `RELIABILITY_QOS_POLICY` 不兼容警告且收不到数据。
+- 推荐通过 `ros2 launch k4a_ros k4a.launch.py use_rviz:=true` 加载项目自带配置；该配置已为
+  点云、彩色、对齐彩色、红外与对齐深度图全部设置兼容的 QoS（Best Effort）。
 - `ros2 topic list` 和 `ros2 topic hz` 先确认数据实际发布。
 - 点云显示昂贵；远程桌面或软件渲染环境先只显示 Depth image。
 

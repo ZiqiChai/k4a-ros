@@ -28,7 +28,7 @@
 ```bash
 source /opt/ros/humble/setup.bash
 source scripts/env.sh
-colcon build --base-paths "$PWD" --packages-select k4a_ros \
+colcon build --base-paths "$PWD/k4a_ros" --packages-select k4a_ros \
   --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
 colcon test --packages-select k4a_ros --event-handlers console_direct+
 colcon test-result --verbose
@@ -47,7 +47,7 @@ colcon test-result --verbose
 - [ ] README 快速开始在全新 clone 中逐条执行过
 - [ ] `docs/INSTALL.md` 的二进制、源码、udev、编译和真机路径都可复现
 - [ ] `docs/DEPENDENCIES.md` 中离线缓存可取得
-- [ ] `CHANGELOG.md`、`package.xml`、`CMakeLists.txt` 版本一致
+- [ ] `CHANGELOG.md`、`k4a_ros/package.xml`、`k4a_ros/CMakeLists.txt` 版本一致
 - [ ] GitHub Actions 的 GCC、Clang、SDK source jobs 全部通过
 - [ ] 预编译 tarball 的 SHA-256、manifest 和 artifact attestation 可验证
 - [ ] 分支保护、tag 和 release notes 已准备

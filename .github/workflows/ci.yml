@@ -64,7 +64,7 @@ jobs:
           source /opt/ros/humble/setup.bash
           test -f /etc/ros/rosdep/sources.list.d/20-default.list || rosdep init
           rosdep update
-          rosdep install --from-paths . --ignore-src --rosdistro humble -r -y
+          rosdep install --from-paths k4a_ros --ignore-src --rosdistro humble -r -y
 
       - name: Select compiler
         run: |
@@ -145,7 +145,7 @@ jobs:
           source /opt/ros/humble/setup.bash
           test -f /etc/ros/rosdep/sources.list.d/20-default.list || rosdep init
           rosdep update
-          rosdep install --from-paths . --ignore-src --rosdistro humble -r -y
+          rosdep install --from-paths k4a_ros --ignore-src --rosdistro humble -r -y
 
       - name: Build SDK from pinned source
         run: ./scripts/setup_sdk.sh --method source --accept-sdk-license

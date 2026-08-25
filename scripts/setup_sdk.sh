@@ -25,8 +25,13 @@ usage() {
 Usage: scripts/setup_sdk.sh [options]
 
 Options:
-  --method binary|source  Install verified official binaries (default) or
-                          compile libk4a from the pinned source revision.
+  --method binary|source|system
+                          Install verified official binaries into the private
+                          .deps prefix (default), compile libk4a from the pinned
+                          source revision, or install the official .deb packages
+                          system-wide with apt. The system method puts k4a on the
+                          default CMake and linker paths, so scripts/env.sh is
+                          not needed afterwards.
   --cache-dir PATH        Read/write dependency packages in PATH.
   --source-dir PATH       Use an existing recursive SDK checkout for source mode.
   --offline               Disable downloads; require a complete local cache/checkout.
@@ -78,8 +83,8 @@ if [[ "${ACCEPT_EULA:-}" == "Y" || "${ACCEPT_EULA:-}" == "y" ]]; then
   license_accepted="true"
 fi
 
-if [[ "${method}" != "binary" && "${method}" != "source" ]]; then
-  echo "Unsupported method '${method}'; choose binary or source." >&2
+if [[ "${method}" != "binary" && "${method}" != "source" && "${method}" != "system" ]]; then
+  echo "Unsupported method '${method}'; choose binary, source or system." >&2
   exit 2
 fi
 
@@ -88,7 +93,10 @@ if [[ "$(dpkg --print-architecture)" != "amd64" ]]; then
   exit 1
 fi
 
-mkdir -p "${cache_dir}" "${sdk_root}"
+mkdir -p "${cache_dir}"
+if [[ "${method}" != "system" ]]; then
+  mkdir -p "${sdk_root}"
+fi
 cache_dir="$(cd -- "${cache_dir}" && pwd)"
 
 verify_file() {
@@ -136,6 +144,15 @@ extract_official_packages() {
   dpkg-deb --extract "${cache_dir}/${SDK_RUNTIME_FILENAME}" "${sdk_root}"
   dpkg-deb --extract "${cache_dir}/${SDK_DEVEL_FILENAME}" "${sdk_root}"
   dpkg-deb --extract "${cache_dir}/${SDK_TOOLS_FILENAME}" "${sdk_root}"
+}
+
+install_system_packages() {
+  # The official runtime package's preinst honours ACCEPT_EULA, matching the
+  # license confirmation handled above by require_sdk_license.
+  sudo ACCEPT_EULA=Y DEBIAN_FRONTEND=noninteractive apt-get install -y \
+    "${cache_dir}/${SDK_RUNTIME_FILENAME}" \
+    "${cache_dir}/${SDK_DEVEL_FILENAME}" \
+    "${cache_dir}/${SDK_TOOLS_FILENAME}"
 }
 
 require_sdk_license() {
@@ -232,6 +249,14 @@ build_source_library() {
 
 fetch_official_packages
 require_sdk_license
+
+if [[ "${method}" == "system" ]]; then
+  install_system_packages
+  echo "Azure Kinect SDK ${SDK_VERSION} installed system-wide via apt."
+  echo "k4a is on the default CMake and linker paths; scripts/env.sh is not required."
+  exit 0
+fi
+
 extract_official_packages
 
 if [[ "${method}" == "source" ]]; then

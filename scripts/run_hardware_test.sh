@@ -24,6 +24,11 @@ set +u
 source "${PROJECT_DIR}/install/setup.bash"
 set -u
 
+if ros2 node list 2>/dev/null | grep -qx '/k4a/driver'; then
+  echo "A /k4a/driver node is already running. Stop it before running this test." >&2
+  exit 1
+fi
+
 ros2 launch k4a_ros k4a.launch.py use_rviz:=false >"${LOG_FILE}" 2>&1 &
 driver_pid=$!
 
@@ -36,12 +41,12 @@ stop_driver() {
 trap stop_driver EXIT INT TERM
 
 for _ in $(seq 1 30); do
-  if ros2 node list 2>/dev/null | grep -qx '/k4a/driver'; then
-    break
-  fi
   if ! kill -0 "${driver_pid}" 2>/dev/null; then
     echo "Driver exited before publishing data. Log: ${LOG_FILE}" >&2
     exit 1
+  fi
+  if ros2 node list 2>/dev/null | grep -qx '/k4a/driver'; then
+    break
   fi
   sleep 1
 done
@@ -51,5 +56,5 @@ if ! ros2 node list 2>/dev/null | grep -qx '/k4a/driver'; then
   exit 1
 fi
 
-"${SCRIPT_DIR}/validate_streams.py" --namespace /k4a --timeout 20
+ros2 run k4a_ros validate_streams.py --namespace /k4a --timeout 20
 echo "Hardware stream test passed. Driver log: ${LOG_FILE}"

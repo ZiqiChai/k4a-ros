@@ -23,7 +23,7 @@ Install dependencies, deploy the SDK, install udev rules, and build the ROS pack
 ROS 2 Humble must already be installed in /opt/ros/humble.
 
 Options:
-  --sdk-method binary|source
+  --sdk-method binary|source|system
   --cache-dir PATH
   --source-dir PATH
   --offline
@@ -84,7 +84,7 @@ while (($#)); do
   esac
 done
 
-if [[ "${sdk_method}" != "binary" && "${sdk_method}" != "source" ]]; then
+if [[ "${sdk_method}" != "binary" && "${sdk_method}" != "source" && "${sdk_method}" != "system" ]]; then
   echo "Unsupported SDK method '${sdk_method}'." >&2
   exit 2
 fi
@@ -143,7 +143,7 @@ if [[ "${skip_rosdep}" == "false" ]]; then
     sudo rosdep init
   fi
   rosdep update
-  rosdep install --from-paths "${PROJECT_DIR}" --ignore-src --rosdistro humble -r -y
+  rosdep install --from-paths "${PROJECT_DIR}/k4a_ros" --ignore-src --rosdistro humble -r -y
 fi
 
 sdk_args=(--method "${sdk_method}")
@@ -161,6 +161,8 @@ fi
 
 echo
 echo "Bootstrap completed. In this terminal run:"
-echo "  source ${PROJECT_DIR}/scripts/env.sh"
+if [[ "${sdk_method}" != "system" ]]; then
+  echo "  source ${PROJECT_DIR}/scripts/env.sh"
+fi
 echo "  source ${PROJECT_DIR}/install/setup.bash"
 echo "  ros2 launch k4a_ros k4a.launch.py use_rviz:=true"

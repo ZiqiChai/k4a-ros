@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.16)
 project(k4a_ros VERSION 2.0.0 LANGUAGES CXX)
 
 if(NOT CMAKE_CXX_STANDARD)
@@ -65,9 +65,8 @@ install(
 )
 install(DIRECTORY include/k4a_ros DESTINATION include)
 install(DIRECTORY config launch rviz DESTINATION share/${PROJECT_NAME})
-install(DIRECTORY docs DESTINATION share/${PROJECT_NAME})
 install(
-  FILES CHANGELOG.md LICENSE README.md
+  FILES LICENSE README.md
   DESTINATION share/${PROJECT_NAME}
 )
 install(

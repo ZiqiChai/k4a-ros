@@ -17,7 +17,7 @@ if [[ "$(dpkg --print-architecture)" != "amd64" ]]; then
   exit 1
 fi
 
-version="$(sed -n 's:.*<version>\([^<]*\)</version>.*:\1:p' "${PROJECT_DIR}/package.xml" | head -n 1)"
+version="$(sed -n 's:.*<version>\([^<]*\)</version>.*:\1:p' "${PROJECT_DIR}/k4a_ros/package.xml" | head -n 1)"
 if [[ -z "${version}" ]]; then
   echo "Unable to read package version." >&2
   exit 1
@@ -44,7 +44,7 @@ cmake -E remove_directory "${stage_dir}"
 mkdir -p "${DIST_DIR}" "${stage_dir}"
 
 colcon --log-base "${RELEASE_ROOT}/log" build \
-  --base-paths "${PROJECT_DIR}" \
+  --base-paths "${PROJECT_DIR}/k4a_ros" \
   --packages-select k4a_ros \
   --build-base "${RELEASE_ROOT}/build" \
   --install-base "${RELEASE_ROOT}/install" \
