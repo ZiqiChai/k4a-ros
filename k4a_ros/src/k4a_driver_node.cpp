@@ -255,23 +255,29 @@ void K4ADriverNode::allocateTransformationImages()
   const int depth_height = calibration_.depth_camera_calibration.resolution_height;
   const int color_width = calibration_.color_camera_calibration.resolution_width;
   const int color_height = calibration_.color_camera_calibration.resolution_height;
+  // A colored cloud must use color-camera visibility. Reprojecting color into
+  // depth geometry can copy foreground pixels onto background surfaces at
+  // occlusion boundaries because the two cameras have different viewpoints.
+  const bool color_point_cloud = point_cloud_enabled_ && color_enabled_;
+  const int point_cloud_width = color_point_cloud ? color_width : depth_width;
+  const int point_cloud_height = color_point_cloud ? color_height : depth_height;
 
   if (point_cloud_enabled_ &&
     k4a_image_create(
-      K4A_IMAGE_FORMAT_CUSTOM, depth_width, depth_height,
-      depth_width * static_cast<int>(3 * sizeof(int16_t)), &point_cloud_image_) !=
+      K4A_IMAGE_FORMAT_CUSTOM, point_cloud_width, point_cloud_height,
+      point_cloud_width * static_cast<int>(3 * sizeof(int16_t)), &point_cloud_image_) !=
     K4A_RESULT_SUCCEEDED)
   {
     throw std::runtime_error("Failed to allocate point-cloud transformation image");
   }
-  if ((point_cloud_enabled_ || aligned_color_enabled_) && color_enabled_ &&
+  if (aligned_color_enabled_ && color_enabled_ &&
     k4a_image_create(
       K4A_IMAGE_FORMAT_COLOR_BGRA32, depth_width, depth_height, depth_width * 4,
       &color_to_depth_image_) != K4A_RESULT_SUCCEEDED)
   {
     throw std::runtime_error("Failed to allocate color-to-depth image");
   }
-  if (aligned_depth_enabled_ &&
+  if ((aligned_depth_enabled_ || color_point_cloud) &&
     k4a_image_create(
       K4A_IMAGE_FORMAT_DEPTH16, color_width, color_height,
       color_width * static_cast<int>(sizeof(uint16_t)), &depth_to_color_image_) !=
@@ -377,10 +383,10 @@ void K4ADriverNode::publishCapture(k4a_capture_t capture)
   if (color_enabled_ && color != nullptr) {publishColor(color, stamp);}
   if (ir_enabled_ && ir != nullptr) {publishIr(ir, stamp);}
   if (depth != nullptr && color != nullptr) {
-    publishAlignedImages(depth, color, stamp);
-    if (point_cloud_enabled_) {publishPointCloud(depth, color, stamp);}
+    const bool depth_in_color_ready = publishAlignedImages(depth, color, stamp);
+    if (point_cloud_enabled_) {publishPointCloud(depth, color, depth_in_color_ready, stamp);}
   } else if (depth != nullptr && point_cloud_enabled_) {
-    publishPointCloud(depth, nullptr, stamp);
+    publishPointCloud(depth, nullptr, false, stamp);
   }
 
   if (depth != nullptr) {k4a_image_release(depth);}
@@ -432,7 +438,7 @@ void K4ADriverNode::publishIr(k4a_image_t image, const rclcpp::Time & stamp)
   ir_publisher_.publish(message, info);
 }
 
-void K4ADriverNode::publishAlignedImages(
+bool K4ADriverNode::publishAlignedImages(
   k4a_image_t depth_image, k4a_image_t color_image, const rclcpp::Time & stamp)
 {
   if (aligned_color_enabled_ && color_to_depth_image_ != nullptr &&
@@ -445,40 +451,61 @@ void K4ADriverNode::publishAlignedImages(
     info.header.stamp = stamp;
     aligned_color_publisher_.publish(message, info);
   }
-  if (aligned_depth_enabled_ && depth_to_color_image_ != nullptr &&
-    k4a_transformation_depth_image_to_color_camera(
-      transformation_, depth_image, depth_to_color_image_) == K4A_RESULT_SUCCEEDED)
-  {
-    auto message = imageMessage(
-      depth_to_color_image_, sensor_msgs::image_encodings::TYPE_16UC1, color_frame_id_, stamp);
-    auto info = color_info_;
-    info.header.stamp = stamp;
-    aligned_depth_publisher_.publish(message, info);
+
+  bool depth_in_color_ready = false;
+  if (depth_to_color_image_ != nullptr) {
+    depth_in_color_ready = k4a_transformation_depth_image_to_color_camera(
+      transformation_, depth_image, depth_to_color_image_) == K4A_RESULT_SUCCEEDED;
+    if (aligned_depth_enabled_ && depth_in_color_ready) {
+      auto message = imageMessage(
+        depth_to_color_image_, sensor_msgs::image_encodings::TYPE_16UC1, color_frame_id_, stamp);
+      auto info = color_info_;
+      info.header.stamp = stamp;
+      aligned_depth_publisher_.publish(message, info);
+    }
   }
+  return depth_in_color_ready;
 }
 
 void K4ADriverNode::publishPointCloud(
-  k4a_image_t depth_image, k4a_image_t color_image, const rclcpp::Time & stamp)
+  k4a_image_t depth_image, k4a_image_t color_image, bool depth_in_color_ready,
+  const rclcpp::Time & stamp)
 {
+  const bool color_geometry = color_enabled_;
+  if (color_geometry &&
+    (color_image == nullptr || depth_to_color_image_ == nullptr || !depth_in_color_ready))
+  {
+    RCLCPP_WARN_THROTTLE(
+      get_logger(), *get_clock(), 5000,
+      "Color-space point cloud skipped because depth-to-color conversion failed");
+    return;
+  }
+
+  // Transform depth into the color camera first, then pair each resulting XYZ
+  // sample with the raw color pixel at the same coordinate.
+  const k4a_image_t point_cloud_depth =
+    color_geometry ? depth_to_color_image_ : depth_image;
+  const k4a_calibration_type_t point_cloud_camera =
+    color_geometry ? K4A_CALIBRATION_TYPE_COLOR : K4A_CALIBRATION_TYPE_DEPTH;
   if (k4a_transformation_depth_image_to_point_cloud(
-      transformation_, depth_image, K4A_CALIBRATION_TYPE_DEPTH, point_cloud_image_) !=
+      transformation_, point_cloud_depth, point_cloud_camera, point_cloud_image_) !=
     K4A_RESULT_SUCCEEDED)
   {
     RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 5000, "Point-cloud conversion failed");
     return;
   }
 
-  const bool has_color = color_image != nullptr && color_to_depth_image_ != nullptr &&
-    k4a_transformation_color_image_to_depth_camera(
-    transformation_, depth_image, color_image, color_to_depth_image_) == K4A_RESULT_SUCCEEDED;
-  const int width = k4a_image_get_width_pixels(depth_image);
-  const int height = k4a_image_get_height_pixels(depth_image);
+  const int width = k4a_image_get_width_pixels(point_cloud_depth);
+  const int height = k4a_image_get_height_pixels(point_cloud_depth);
   const auto * xyz = reinterpret_cast<const int16_t *>(k4a_image_get_buffer(point_cloud_image_));
-  const auto * bgra = has_color ? k4a_image_get_buffer(color_to_depth_image_) : nullptr;
+  const int xyz_stride = k4a_image_get_stride_bytes(point_cloud_image_) /
+    static_cast<int>(sizeof(int16_t));
+  const auto * bgra = color_geometry ? k4a_image_get_buffer(color_image) : nullptr;
+  const int bgra_stride = color_geometry ? k4a_image_get_stride_bytes(color_image) : 0;
 
   sensor_msgs::msg::PointCloud2 cloud;
   cloud.header.stamp = stamp;
-  cloud.header.frame_id = depth_frame_id_;
+  cloud.header.frame_id = color_geometry ? color_frame_id_ : depth_frame_id_;
   cloud.height = static_cast<uint32_t>(height);
   cloud.width = static_cast<uint32_t>(width);
   cloud.is_bigendian = false;
@@ -493,25 +520,31 @@ void K4ADriverNode::publishPointCloud(
   sensor_msgs::PointCloud2Iterator<uint8_t> b_it(cloud, "b");
   const float nan = std::numeric_limits<float>::quiet_NaN();
 
-  for (size_t index = 0; index < static_cast<size_t>(width) * height;
-    ++index, ++x_it, ++y_it, ++z_it, ++r_it, ++g_it, ++b_it)
-  {
-    const int16_t z_mm = xyz[index * 3 + 2];
-    if (z_mm == 0) {
-      *x_it = nan;
-      *y_it = nan;
-      *z_it = nan;
-    } else {
-      *x_it = xyz[index * 3] / 1000.0F;
-      *y_it = xyz[index * 3 + 1] / 1000.0F;
-      *z_it = z_mm / 1000.0F;
-    }
-    if (bgra != nullptr) {
-      *b_it = bgra[index * 4];
-      *g_it = bgra[index * 4 + 1];
-      *r_it = bgra[index * 4 + 2];
-    } else {
-      *r_it = *g_it = *b_it = 0;
+  for (int row = 0; row < height; ++row) {
+    const int16_t * xyz_row = xyz + row * xyz_stride;
+    const uint8_t * bgra_row = bgra == nullptr ? nullptr : bgra + row * bgra_stride;
+    for (int column = 0; column < width;
+      ++column, ++x_it, ++y_it, ++z_it, ++r_it, ++g_it, ++b_it)
+    {
+      const int16_t * point = xyz_row + column * 3;
+      const int16_t z_mm = point[2];
+      if (z_mm == 0) {
+        *x_it = nan;
+        *y_it = nan;
+        *z_it = nan;
+      } else {
+        *x_it = point[0] / 1000.0F;
+        *y_it = point[1] / 1000.0F;
+        *z_it = z_mm / 1000.0F;
+      }
+      if (bgra_row != nullptr) {
+        const uint8_t * color = bgra_row + column * 4;
+        *b_it = color[0];
+        *g_it = color[1];
+        *r_it = color[2];
+      } else {
+        *r_it = *g_it = *b_it = 0;
+      }
     }
   }
   point_cloud_publisher_->publish(std::move(cloud));

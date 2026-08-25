@@ -96,6 +96,19 @@ SDK 会在 `k4a_device_start_cameras` 阶段拒绝不支持的 resolution/depth 
 - `ros2 topic list` 和 `ros2 topic hz` 先确认数据实际发布。
 - 点云显示昂贵；远程桌面或软件渲染环境先只显示 Depth image。
 
+## 点云中屏幕图案出现在墙面（重影）
+
+启用 RGB 时，点云在 Color 相机几何下生成，遮挡边界不再把前景纹理复制到背景表面；若仍观察到
+重影，确认运行的是当前版本驱动且 `color_enabled: true`。
+
+以下现象属于传感器物理特性，与驱动无关：
+
+- `/k4a/aligned_color_to_depth` 在遮挡边界仍可能有数像素的重投影拉伸，这是 Color→Depth
+  视图差的预期表现。
+- 黑色或高反射屏幕会产生深度空洞，使点云在对应区域缺失。
+
+原因与实机对比见 [彩色点云的坐标系与遮挡处理](COLOR_POINT_CLOUD.md)。
+
 ## `run_hardware_test.sh` 失败
 
 脚本会输出并保留日志路径。查看末尾：

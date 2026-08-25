@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- 修复彩色点云在 RGB/Depth 遮挡边界将前景纹理投到背景表面的重影：启用 RGB 时先把 Depth
+  转换到 Color 相机几何，再与原始 Color 像素逐点配对。
+- 启用 RGB 时，`/k4a/points` 由 Depth optical frame/Depth 分辨率调整为 Color optical
+  frame/Color 分辨率；关闭 RGB 时保持原有 Depth frame/分辨率。`validate_streams.py`
+  新增点云 frame 与尺寸的一致性检查。
+- 更新 RViz2 预置为已验证的观察视角；新增 `docs/COLOR_POINT_CLOUD.md` 及修复前后实机对比图。
 - 修复 RViz2 预置点云和对齐深度图订阅使用 Reliable QoS、无法接收 SensorDataQoS 数据的问题。
 - 修复真机测试误用已有 `/k4a/driver` 数据、在新驱动启动失败时仍报告通过的问题。
 - 规范化仓库结构：ROS 包迁移至自包含的 `k4a_ros/` 子目录，可直接拷入 colcon 工作空间

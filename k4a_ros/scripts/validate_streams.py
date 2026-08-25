@@ -59,6 +59,7 @@ class StreamValidator(Node):
             "color",
             {
                 "encoding": message.encoding,
+                "frame_id": message.header.frame_id,
                 "size": [message.width, message.height],
                 "sample_min": min(samples),
                 "sample_max": max(samples),
@@ -105,6 +106,7 @@ class StreamValidator(Node):
         self._complete(
             "points",
             {
+                "frame_id": message.header.frame_id,
                 "organized_size": [message.width, message.height],
                 "fields": sorted(field_offsets),
                 "finite_sample_count": len(finite_z),
@@ -147,6 +149,8 @@ def main():
     healthy = healthy and node.results["depth"]["valid_sample_ratio"] > 0.01
     healthy = healthy and node.results["ir"]["sample_max"] > node.results["ir"]["sample_min"]
     healthy = healthy and node.results["points"]["finite_sample_count"] > 0
+    healthy = healthy and node.results["points"]["frame_id"] == node.results["color"]["frame_id"]
+    healthy = healthy and node.results["points"]["organized_size"] == node.results["color"]["size"]
     node.destroy_node()
     rclpy.shutdown()
     return 0 if healthy else 1

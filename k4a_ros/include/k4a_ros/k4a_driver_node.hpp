@@ -49,10 +49,11 @@ private:
   void publishColor(k4a_image_t image, const rclcpp::Time & stamp);
   void publishDepth(k4a_image_t image, const rclcpp::Time & stamp);
   void publishIr(k4a_image_t image, const rclcpp::Time & stamp);
-  void publishAlignedImages(
+  bool publishAlignedImages(
     k4a_image_t depth_image, k4a_image_t color_image, const rclcpp::Time & stamp);
   void publishPointCloud(
-    k4a_image_t depth_image, k4a_image_t color_image, const rclcpp::Time & stamp);
+    k4a_image_t depth_image, k4a_image_t color_image, bool depth_in_color_ready,
+    const rclcpp::Time & stamp);
 
   sensor_msgs::msg::CameraInfo cameraInfo(
     const k4a_calibration_camera_t & camera, const std::string & frame_id) const;

@@ -1,32 +1,76 @@
 Panels:
   - Class: rviz_common/Displays
+    Help Height: 0
     Name: Displays
+    Property Tree Widget:
+      Expanded: ~
+      Splitter Ratio: 0.5
+    Tree Height: 350
   - Class: rviz_common/Views
+    Expanded:
+      - /Current View1
     Name: Views
+    Splitter Ratio: 0.5
 Visualization Manager:
   Class: ""
   Displays:
     - Alpha: 0.5
       Cell Size: 1
       Class: rviz_default_plugins/Grid
+      Color: 160; 160; 164
       Enabled: true
+      Line Style:
+        Line Width: 0.029999999329447746
+        Value: Lines
       Name: Grid
+      Normal Cell Count: 0
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
       Plane: XY
-    - Class: rviz_default_plugins/PointCloud2
+      Plane Cell Count: 10
+      Reference Frame: <Fixed Frame>
+      Value: true
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 10
+        Min Value: -10
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz_default_plugins/PointCloud2
+      Color: 255; 255; 255
       Color Transformer: RGB8
       Decay Time: 0
       Enabled: true
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Max Intensity: 4096
+      Min Color: 0; 0; 0
+      Min Intensity: 0
       Name: Azure Kinect Point Cloud
+      Position Transformer: XYZ
+      Selectable: true
       Size (Pixels): 2
+      Size (m): 0.009999999776482582
       Style: Points
       Topic:
         Depth: 5
         Durability Policy: Volatile
+        Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Best Effort
         Value: /k4a/points
+      Use Fixed Frame: true
+      Use rainbow: true
+      Value: true
     - Class: rviz_default_plugins/Image
       Enabled: true
+      Max Value: 1
+      Median window: 5
+      Min Value: 0
       Name: Azure Kinect Color
       Normalize Range: true
       Topic:
@@ -35,8 +79,12 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Best Effort
         Value: /k4a/color/image_raw
+      Value: true
     - Class: rviz_default_plugins/Image
       Enabled: true
+      Max Value: 1
+      Median window: 5
+      Min Value: 0
       Name: Azure Kinect Aligned Depth
       Normalize Range: true
       Topic:
@@ -45,8 +93,12 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Best Effort
         Value: /k4a/aligned_depth_to_color/image_raw
+      Value: true
     - Class: rviz_default_plugins/Image
       Enabled: true
+      Max Value: 1
+      Median window: 5
+      Min Value: 0
       Name: Azure Kinect Aligned Color
       Normalize Range: true
       Topic:
@@ -55,8 +107,12 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Best Effort
         Value: /k4a/aligned_color_to_depth/image_raw
+      Value: true
     - Class: rviz_default_plugins/Image
       Enabled: true
+      Max Value: 1
+      Median window: 5
+      Min Value: 0
       Name: Azure Kinect IR
       Normalize Range: true
       Topic:
@@ -65,9 +121,21 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Best Effort
         Value: /k4a/ir/image_raw
+      Value: true
     - Class: rviz_default_plugins/TF
-      Enabled: true
+      Enabled: false
+      Frame Timeout: 15
+      Frames:
+        All Enabled: true
+      Marker Scale: 1
       Name: TF
+      Show Arrows: true
+      Show Axes: true
+      Show Names: false
+      Tree:
+        {}
+      Update Interval: 0
+      Value: false
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -76,17 +144,73 @@ Visualization Manager:
   Name: root
   Tools:
     - Class: rviz_default_plugins/Interact
+      Hide Inactive Objects: true
     - Class: rviz_default_plugins/MoveCamera
     - Class: rviz_default_plugins/Select
+  Transformation:
+    Current:
+      Class: rviz_default_plugins/TF
+  Value: true
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
       Distance: 2
+      Enable Stereo Rendering:
+        Stereo Eye Separation: 0.05999999865889549
+        Stereo Focal Distance: 1
+        Swap Stereo Eyes: false
+        Value: false
       Focal Point:
-        X: 0
-        Y: 0
-        Z: 1
+        X: -0.11647308617830276
+        Y: 0.0003709722077473998
+        Z: 1.0008535385131836
+      Focal Shape Fixed Size: true
+      Focal Shape Size: 0.05000000074505806
+      Invert Z Axis: false
       Name: Current View
+      Near Clip Distance: 0.009999999776482582
+      Pitch: -1.4397964477539062
+      Target Frame: <Fixed Frame>
+      Value: Orbit (rviz_default_plugins)
+      Yaw: 4.653563022613525
+    Saved:
+      - Class: rviz_default_plugins/Orbit
+        Distance: 2
+        Enable Stereo Rendering:
+          Stereo Eye Separation: 0.05999999865889549
+          Stereo Focal Distance: 1
+          Swap Stereo Eyes: false
+          Value: false
+        Focal Point:
+          X: -0.11647308617830276
+          Y: 0.0003709722077473998
+          Z: 1.0008535385131836
+        Focal Shape Fixed Size: true
+        Focal Shape Size: 0.05000000074505806
+        Invert Z Axis: false
+        Name: Orbit
+        Near Clip Distance: 0.009999999776482582
+        Pitch: -1.4397964477539062
+        Target Frame: <Fixed Frame>
+        Value: Orbit (rviz_default_plugins)
+        Yaw: 4.653563022613525
 Window Geometry:
-  Height: 900
-  Width: 1440
+  Azure Kinect Aligned Color:
+    collapsed: false
+  Azure Kinect Aligned Depth:
+    collapsed: false
+  Azure Kinect Color:
+    collapsed: false
+  Azure Kinect IR:
+    collapsed: false
+  Displays:
+    collapsed: false
+  Height: 1376
+  Hide Left Dock: false
+  Hide Right Dock: false
+  QMainWindow State: 000000ff00000000fd00000002000000000000015600000506fc0200000005fb0000001e0041007a0075007200650020004b0069006e006500630074002000490052010000003d000000d60000002800fffffffb000000340041007a0075007200650020004b0069006e00650063007400200041006c00690067006e0065006400200043006f006c006f00720100000119000000d30000002800fffffffb000000240041007a0075007200650020004b0069006e00650063007400200043006f006c006f007201000001f2000000d40000002800fffffffb000000340041007a0075007200650020004b0069006e00650063007400200041006c00690067006e0065006400200044006500700074006801000002cc000000d60000002800fffffffb000000100044006900730070006c00610079007301000003a80000019b000000c900ffffff00000001000001cb00000506fc0200000001fb0000000a00560069006500770073010000003d00000506000000a400ffffff0000068d0000050600000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  Views:
+    collapsed: false
+  Width: 2490
+  X: 70
+  Y: 27

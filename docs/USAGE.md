@@ -53,7 +53,7 @@ component plugin 为 `k4a_ros::K4ADriverNode`，同时安装了可直接运行�
 | `/k4a/aligned_depth_to_color/camera_info` | `sensor_msgs/msg/CameraInfo` | color optical |
 | `/k4a/aligned_color_to_depth/image_raw` | `sensor_msgs/msg/Image` | `bgra8`, depth optical |
 | `/k4a/aligned_color_to_depth/camera_info` | `sensor_msgs/msg/CameraInfo` | depth optical |
-| `/k4a/points` | `sensor_msgs/msg/PointCloud2` | organized XYZRGB, m, depth optical |
+| `/k4a/points` | `sensor_msgs/msg/PointCloud2` | organized XYZRGB, m；启用 RGB 时为 color optical，否则为 depth optical |
 | `/k4a/imu` | `sensor_msgs/msg/Imu` | rad/s、m/s², IMU frame |
 | `/k4a/imu_temperature` | `sensor_msgs/msg/Temperature` | °C, IMU frame |
 | `/diagnostics` | `diagnostic_msgs/msg/DiagnosticArray` | serial、captures、timeouts、IMU count |
@@ -80,8 +80,8 @@ x 向右、y 向下、z 向前。
 | `depth_mode` | `nfov_unbinned` | 见下文 |
 | `fps` | `30` | `5/15/30`；组合必须受 SDK 支持 |
 | `capture_timeout_ms` | `1000` | 等待 capture 的超时，必须大于 0 |
-| `depth_frame_id` | `k4a_depth_camera_optical_frame` | Depth 与点云 frame |
-| `color_frame_id` | `k4a_color_camera_optical_frame` | RGB frame |
+| `depth_frame_id` | `k4a_depth_camera_optical_frame` | Depth frame；关闭 RGB 时也是点云 frame |
+| `color_frame_id` | `k4a_color_camera_optical_frame` | RGB frame；启用 RGB 时也是点云 frame |
 | `imu_frame_id` | `k4a_imu_frame` | IMU frame |
 | `publish_tf` | `true` | 发布工厂标定静态 TF |
 
@@ -121,5 +121,9 @@ aligned images、point cloud。当前驱动以 `standalone` wired sync mode 启�
 
 - 只订阅原始深度时，关闭两个 aligned stream 和 point cloud 可显著降低 CPU 与内存带宽。
 - 高分辨率 BGRA32 占用较高；默认 720p/30 FPS 是更稳妥的通用配置。
-- 点云为 organized cloud，无效深度点写为非有限值；消费者应检查 `isfinite`。
+- 点云为 organized cloud，无效深度点写为非有限值；消费者应检查 `isfinite`。启用 RGB 时，
+  点云分辨率与 Color 相同（默认 `1280×720`）；关闭 RGB 时与 Depth 相同（默认 `640×576`）。
 - 同一 RGB-D capture 的派生消息共享设备时间戳映射后的 ROS 时间；IMU 保留各自设备时间间隔。
+
+彩色点云为何使用 Color 坐标系，以及遮挡边界重影的修复与实机证据，见
+[彩色点云的坐标系与遮挡处理](COLOR_POINT_CLOUD.md)。

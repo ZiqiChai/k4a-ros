@@ -12,7 +12,7 @@ Ubuntu 22.04 amd64 与 ROS 2 Humble。
 
 - RGB、Depth、IR 图像与 `CameraInfo`（工厂标定）
 - Depth→Color、Color→Depth 对齐图像
-- 有序 XYZRGB 点云（米，Depth optical frame）
+- 有序 XYZRGB 点云（米；启用 RGB 时使用 Color optical frame，避免遮挡边界错误着色）
 - IMU（加速度已旋转至陀螺仪坐标系）与温度
 - 硬件时间戳映射 ROS clock，同一 capture 的消息时间戳一致
 - 静态 TF、`SensorDataQoS`、diagnostics、多相机序号/序列号选择
@@ -95,6 +95,7 @@ ros2 launch k4a_ros k4a.launch.py use_rviz:=true
 - [依赖锁定与离线安装](docs/DEPENDENCIES.md)
 - [分发与预编译产物](docs/DISTRIBUTION.md)
 - [故障排查](docs/TROUBLESHOOTING.md)
+- [彩色点云的坐标系与遮挡处理](docs/COLOR_POINT_CLOUD.md)
 - [发布检查清单](docs/RELEASE_CHECKLIST.md)
 - [版本记录](CHANGELOG.md)
 

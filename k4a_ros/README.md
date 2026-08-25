@@ -10,7 +10,7 @@ ROS 2 Humble）。
 
 - RGB、Depth、IR 与对应 `CameraInfo`
 - Depth→Color、Color→Depth 标定对齐图像
-- Depth optical frame 下的有序 XYZRGB 点云（米）
+- Color optical frame 下的有序 XYZRGB 点云（米）；关闭 RGB 时回退到 Depth optical frame
 - IMU 与温度
 - 设备硬件时间戳映射 ROS clock，同一 capture 消息使用相同时间戳
 - 工厂标定静态 TF、`SensorDataQoS`、diagnostics
