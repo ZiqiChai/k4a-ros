@@ -1,10 +1,10 @@
 /build/
 /install/
 /log/
-/.deps/
 /dist/
-/.release/
-/dependencies/cache/
+/.deps/
+dependencies/cache/*.deb
+dependencies/source/Azure-Kinect-Sensor-SDK/
 /.colcon/
 *.mkv
 *.pcd

@@ -9,8 +9,6 @@ on:
 
 permissions:
   contents: read
-  id-token: write
-  attestations: write
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -22,28 +20,9 @@ defaults:
 
 jobs:
   ros-build:
-    name: ROS 2 Humble / ${{ matrix.name }}
+    name: ROS 2 Humble / GCC / C++17
     runs-on: ubuntu-22.04
     container: ros:humble-ros-base-jammy
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: GCC / C++17
-            cc: gcc
-            cxx: g++
-            cxx_standard: 17
-            package_artifact: true
-          - name: Clang / C++17
-            cc: clang
-            cxx: clang++
-            cxx_standard: 17
-            package_artifact: false
-          - name: GCC / C++20 compatibility
-            cc: gcc
-            cxx: g++
-            cxx_standard: 20
-            package_artifact: false
     env:
       ACCEPT_EULA: Y
       DEBIAN_FRONTEND: noninteractive
@@ -56,73 +35,49 @@ jobs:
         run: |
           apt-get update
           apt-get install -y --no-install-recommends \
-            build-essential clang cmake curl git python3-colcon-common-extensions \
-            python3-rosdep shellcheck
+            build-essential cmake curl git python3-colcon-common-extensions \
+            python3-rosdep shellcheck udev
 
-      - name: Install ROS dependencies
+      - name: Check scripts
         run: |
+          bash -n scripts/*.sh tools/*.sh
+          shellcheck --severity=warning scripts/*.sh tools/*.sh
+
+      - name: Install system Azure Kinect SDK
+        run: ./scripts/setup_sdk.sh --accept-sdk-license
+
+      - name: Prepare standard ROS workspace
+        run: |
+          mkdir -p /tmp/k4a_ros_ws/src
+          cp -a k4a_ros /tmp/k4a_ros_ws/src/
           source /opt/ros/humble/setup.bash
           test -f /etc/ros/rosdep/sources.list.d/20-default.list || rosdep init
           rosdep update
-          rosdep install --from-paths k4a_ros --ignore-src --rosdistro humble -r -y
+          rosdep install --from-paths /tmp/k4a_ros_ws/src \
+            --ignore-src --rosdistro humble -r -y
 
-      - name: Select compiler
+      - name: Build package
         run: |
-          echo "CC=${{ matrix.cc }}" >> "${GITHUB_ENV}"
-          echo "CXX=${{ matrix.cxx }}" >> "${GITHUB_ENV}"
-
-      - name: Check shell scripts
-        run: |
-          bash -n scripts/*.sh
-          shellcheck --severity=warning scripts/*.sh
-
-      - name: Install verified SDK binaries
-        run: ./scripts/setup_sdk.sh --accept-sdk-license
-
-      - name: Build ROS package
-        run: ./scripts/build_ros.sh -DCMAKE_CXX_STANDARD=${{ matrix.cxx_standard }}
-
-      - name: Run tests
-        run: |
+          cd /tmp/k4a_ros_ws
           source /opt/ros/humble/setup.bash
-          source scripts/env.sh
+          colcon build --symlink-install --cmake-args \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_CXX_STANDARD=17
+
+      - name: Test installed package
+        run: |
+          cd /tmp/k4a_ros_ws
+          source /opt/ros/humble/setup.bash
+          source install/setup.bash
           colcon test --packages-select k4a_ros --event-handlers console_direct+
           colcon test-result --verbose
-
-      - name: Check installed package and offline replay
-        run: |
-          source /opt/ros/humble/setup.bash
-          source scripts/env.sh
-          source install/setup.bash
           ros2 pkg executables k4a_ros
           ros2 launch k4a_ros k4a.launch.py --show-args
-          ./scripts/setup_sdk.sh --offline --accept-sdk-license
 
-      - name: Build relocatable ROS artifact
-        if: matrix.package_artifact
-        run: ./scripts/package_ros.sh
-
-      - name: Attest ROS artifact
-        if: matrix.package_artifact && github.event_name != 'pull_request'
-        uses: actions/attest@v4
-        with:
-          subject-path: dist/*.tar.gz
-
-      - name: Upload ROS artifact
-        if: matrix.package_artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: k4a-ros-ubuntu22.04-ros2-humble-amd64
-          path: |
-            dist/*.tar.gz
-            dist/*.sha256
-          if-no-files-found: error
-          retention-days: 30
-
-  sdk-source-build:
-    name: SDK source build / GCC
+  sdk-recovery-build:
+    name: Pinned SDK source recovery
     runs-on: ubuntu-22.04
-    container: ros:humble-ros-base-jammy
+    container: ubuntu:22.04
     env:
       ACCEPT_EULA: Y
       DEBIAN_FRONTEND: noninteractive
@@ -135,28 +90,38 @@ jobs:
         run: |
           apt-get update
           apt-get install -y --no-install-recommends \
-            build-essential cmake curl git libgl1-mesa-dev libopencv-dev \
-            libsoundio-dev libudev-dev libusb-1.0-0-dev libvulkan-dev uuid-dev \
-            libx11-dev libxcursor-dev libxinerama-dev libxrandr-dev \
-            libxxf86vm-dev pkg-config python3-colcon-common-extensions python3-rosdep
+            build-essential ca-certificates cmake curl git libgl1-mesa-dev \
+            libopencv-dev libsoundio-dev libudev-dev libusb-1.0-0-dev \
+            libvulkan-dev libx11-dev libxcursor-dev libxinerama-dev \
+            libxrandr-dev libxxf86vm-dev pkg-config shellcheck udev uuid-dev
 
-      - name: Install ROS dependencies
+      - name: Download and system-install pinned runtime
+        run: ./scripts/setup_sdk.sh --accept-sdk-license
+
+      - name: Rebuild libk4a and assemble system packages
+        run: ./tools/build_sdk_system_packages.sh
+
+      - name: Verify recovery package metadata
         run: |
-          source /opt/ros/humble/setup.bash
-          test -f /etc/ros/rosdep/sources.list.d/20-default.list || rosdep init
-          rosdep update
-          rosdep install --from-paths k4a_ros --ignore-src --rosdistro humble -r -y
+          runtime_deb="$(find dist/sdk-system -name 'libk4a1.4_*_amd64.deb')"
+          devel_deb="$(find dist/sdk-system -name 'libk4a1.4-dev_*_amd64.deb')"
+          test "$(dpkg-deb -f "${runtime_deb}" Package)" = libk4a1.4
+          test "$(dpkg-deb -f "${devel_deb}" Package)" = libk4a1.4-dev
+          dpkg-deb -f "${devel_deb}" Depends | grep -Fq \
+            "libk4a1.4 (= $(dpkg-deb -f "${runtime_deb}" Version))"
+          (cd dist/sdk-system && sha256sum --check SHA256SUMS)
 
-      - name: Build SDK from pinned source
-        run: ./scripts/setup_sdk.sh --method source --accept-sdk-license
-
-      - name: Build and test ROS package
+      - name: Verify authorized recovery archive entry
         run: |
-          ./scripts/build_ros.sh
-          source /opt/ros/humble/setup.bash
-          source scripts/env.sh
-          colcon test --packages-select k4a_ros --event-handlers console_direct+
-          colcon test-result --verbose
-
-      - name: Verify offline source replay
-        run: ./scripts/setup_sdk.sh --method source --offline --accept-sdk-license
+          mkdir -p dependencies/cache dependencies/source
+          cp /root/.cache/k4a-ros/libk4a1.4_1.4.2_amd64.deb dependencies/cache/
+          cp /root/.cache/k4a-ros/libk4a1.4-dev_1.4.2_amd64.deb dependencies/cache/
+          cp -a /root/.cache/k4a-ros/source/Azure-Kinect-Sensor-SDK \
+            dependencies/source/
+          ./tools/package_sdk_recovery_bundle.sh --accept-sdk-license
+          archive="$(find dist/sdk-recovery -name '*.tar.gz')"
+          (cd "$(dirname "${archive}")" && \
+            sha256sum --check "$(basename "${archive}").sha256")
+          tar --list --gzip --file "${archive}" > /tmp/sdk-recovery-contents.txt
+          grep -Fq dependencies/source/Azure-Kinect-Sensor-SDK/.gitmodules \
+            /tmp/sdk-recovery-contents.txt

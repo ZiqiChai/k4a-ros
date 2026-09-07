@@ -1,28 +1,21 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-readonly SCRIPT_DIR
-PROJECT_DIR="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
-readonly PROJECT_DIR
 LOG_FILE="$(mktemp /tmp/k4a_ros_hardware_test.XXXXXX.log)"
 readonly LOG_FILE
 
-if [[ ! -f /opt/ros/humble/setup.bash || ! -f "${PROJECT_DIR}/install/setup.bash" ]]; then
-  echo "ROS 2 Humble or the built workspace is missing. Run scripts/build_ros.sh first." >&2
+if [[ ! -f /opt/ros/humble/setup.bash ]]; then
+  echo "ROS 2 Humble was not found at /opt/ros/humble." >&2
   exit 1
 fi
 
-# shellcheck disable=SC1091
-set +u
-source /opt/ros/humble/setup.bash
-set -u
-# shellcheck source=env.sh
-source "${SCRIPT_DIR}/env.sh"
-# shellcheck disable=SC1091
-set +u
-source "${PROJECT_DIR}/install/setup.bash"
-set -u
+if ! command -v ros2 >/dev/null 2>&1 || ! ros2 pkg prefix k4a_ros >/dev/null 2>&1; then
+  echo "k4a_ros is not in the current ROS environment." >&2
+  echo "Source ROS 2 and the workspace before running this script:" >&2
+  echo "  source /opt/ros/humble/setup.bash" >&2
+  echo "  source ~/ros_ws/install/setup.bash" >&2
+  exit 1
+fi
 
 if ros2 node list 2>/dev/null | grep -qx '/k4a/driver'; then
   echo "A /k4a/driver node is already running. Stop it before running this test." >&2

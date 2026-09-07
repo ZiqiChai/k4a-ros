@@ -2,13 +2,11 @@
 
 ## 启动
 
-每个新终端先加载三层环境：
+每个新终端加载 ROS 2 underlay 和已编译 workspace 的 overlay：
 
 ```bash
-cd k4a-ros
 source /opt/ros/humble/setup.bash
-source scripts/env.sh        # SDK 运行库路径
-source install/setup.bash    # 工作空间
+source ~/ros_ws/install/setup.bash
 ```
 
 默认启动（可选同时启动项目自带 RViz2 配置）：
@@ -98,11 +96,11 @@ x 向右、y 向下、z 向前。
 
 ## 多相机
 
-先获取序号：
+可先按设备索引逐台启动，再从启动日志中的 `serial=...` 或 diagnostics 记录序号：
 
 ```bash
-source scripts/env.sh
-k4arecorder --list
+ros2 launch k4a_ros k4a.launch.py device_id:=0
+ros2 topic echo /diagnostics --once
 ```
 
 为每台相机建立独立 YAML，填写不同 `serial_number`，然后分别使用不同 namespace 启动：
@@ -125,5 +123,6 @@ aligned images、point cloud。当前驱动以 `standalone` wired sync mode 启�
   点云分辨率与 Color 相同（默认 `1280×720`）；关闭 RGB 时与 Depth 相同（默认 `640×576`）。
 - 同一 RGB-D capture 的派生消息共享设备时间戳映射后的 ROS 时间；IMU 保留各自设备时间间隔。
 
-彩色点云为何使用 Color 坐标系，以及遮挡边界重影的修复与实机证据，见
-[彩色点云的坐标系与遮挡处理](COLOR_POINT_CLOUD.md)。
+启用 RGB 时，驱动先将 Depth 转换到 Color 相机网格，再用 Color optical frame
+生成 XYZ 并与同像素的原始 Color 配对。这样几何与颜色共享同一视角和遮挡关系，
+避免在前后景深度突变处将前景纹理投影到背景表面。

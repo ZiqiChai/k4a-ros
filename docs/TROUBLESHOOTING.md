@@ -1,70 +1,45 @@
 # 故障排查
 
-按“USB 枚举 → 权限 → SDK runtime → ROS 环境 → 参数/带宽”的顺序检查，通常最快。
+## 系统 SDK 未找到
 
-## 找不到相机
+编译错误通常包含 `Could not find a package configuration file provided by "k4a"`。检查：
 
 ```bash
-lsusb | grep '045e:'
-source scripts/env.sh
-k4arecorder --list
+dpkg-query -W libk4a1.4 libk4a1.4-dev
+ls -l /usr/lib/x86_64-linux-gnu/cmake/k4a/k4aConfig.cmake
+ls -l /usr/lib/x86_64-linux-gnu/libk4a1.4/libdepthengine.so.2.0
 ```
 
-- `lsusb` 没有输出：检查供电、数据线、USB 3.x 端口或主板 USB controller。
-- `lsusb` 有设备但 recorder 无法打开：重新执行 `./scripts/install_udev_rules.sh`，重新插拔，确认
-  当前用户属于 `plugdev`。
-- 在 Docker/沙箱内：宿主机 udev 正确并不等于容器可访问，必须显式传入相机的所有 USB interface。
+缺失时重新运行仓库根目录的 `./scripts/setup_sdk.sh`，然后在 `~/ros_ws` 重新执行 `colcon build
+--cmake-clean-cache`。不要设置项目专用的 `CMAKE_PREFIX_PATH` 或 `LD_LIBRARY_PATH`。
 
-检查规则是否生效：
+## `k4a-tools` 依赖 `libsoundio1`
+
+官方工具包面向 Ubuntu 18.04，不能通过 Jammy apt 正常安装。本项目不安装 `k4a-tools`；
+`k4aviewer` 和 `k4arecorder` 不是 ROS 驱动依赖。不要把 `libsoundio.so.2` 伪装成 `.so.1`。
+
+## 设备权限或找不到相机
 
 ```bash
+lsusb | grep -i microsoft
 ls -l /etc/udev/rules.d/99-k4a.rules
-sudo udevadm control --reload-rules
+groups
 ```
 
-## 找不到 SDK 或 `k4aConfig.cmake`
+重新运行 `setup_sdk.sh` 会安装并刷新 udev 规则。之后重新插拔相机；当前用户应属于 `plugdev`。
 
-错误通常包含 `Could not find a package configuration file provided by "k4a"`。
+## `LIBUSB_ERROR_BUSY`
+
+Azure Kinect 由单个进程独占。关闭其他 ROS launch、viewer、recorder 或容器中的驱动后再启动：
 
 ```bash
-./scripts/setup_sdk.sh
-source scripts/env.sh
-echo "$K4A_SDK_ROOT"
-find "$K4A_SDK_ROOT" -name k4aConfig.cmake
+pgrep -af 'k4a_driver_node|ros2 launch.*k4a'
 ```
-
-每个新终端都必须重新 `source scripts/env.sh`，并且要在调用 `colcon build` 之前执行。
-不想维护这层环境时，可改用系统安装：`./scripts/setup_sdk.sh --method system`，之后
-CMake 与链接器都能直接找到 SDK。
-
-## 找不到 `libdepthengine.so.2.0` 或 `libk4a.so.1.4`
-
-```bash
-source scripts/env.sh
-ldd "$K4A_SDK_ROOT/lib/x86_64-linux-gnu/libk4a.so.1.4.2"
-echo "$LD_LIBRARY_PATH"
-```
-
-不要只复制 `libk4a.so`。Depth 模式运行必须保留
-`$K4A_SDK_ROOT/lib/x86_64-linux-gnu/libk4a1.4/libdepthengine.so.2.0`。
-
-## `k4aviewer` 缺少 `libsoundio.so.1`
-
-这是 Ubuntu 18.04 工具包与 Jammy `libsoundio.so.2` 的 ABI 差异。不要创建欺骗性软链接。
-使用以下已验证路径：
-
-```bash
-k4arecorder --list
-ros2 launch k4a_ros k4a.launch.py use_rviz:=true
-```
-
-viewer 只是 SDK GUI 工具，不是驱动运行依赖。
 
 ## 驱动启动后 capture timeout
 
-- 确认相机没有被 `k4arecorder`、另一个 ROS node 或容器占用。
-- 直连 USB 3.x，避免无源 Hub。
-- 恢复默认 `720p + nfov_unbinned + 30 FPS`。
+- 相机直连 USB 3.x 主板端口，避免无源 Hub；
+- 恢复默认 `720p + nfov_unbinned + 30 FPS`；
 - 关闭高开销派生流进行隔离：
 
 ```yaml
@@ -73,48 +48,33 @@ aligned_depth_enabled: false
 aligned_color_enabled: false
 ```
 
-检查统计：
+## RViz2 没有图像或点云
+
+- 推荐使用 `ros2 launch k4a_ros k4a.launch.py use_rviz:=true`；
+- 手动添加 Image/PointCloud2 时，将 Reliability Policy 设为 `Best Effort`；
+- `/k4a/points` 启用 RGB 时使用 `k4a_color_camera_optical_frame`；
+- 使用 `ros2 topic info /k4a/points --verbose` 检查 publisher/subscriber QoS。
+
+驱动刚启动时 RViz 可能短暂创建默认 Reliable 订阅并打印一次不兼容警告；配置加载完成后实际
+订阅应为 Best Effort，且不应持续告警。
+
+## 点云遮挡边界重影
+
+当前驱动在 Color 相机几何下生成彩色点云，避免把前景纹理复制到背景表面。若仍有问题，确认
+运行的是当前 workspace 构建结果且 `color_enabled: true`，并检查 `/k4a/points` 的
+`frame_id` 为 `k4a_color_camera_optical_frame`。
+
+Color→Depth 对齐图在遮挡边界仍可能有数像素拉伸；黑色/高反射物体也会造成 ToF 深度空洞，
+两者都是传感器成像特性，不是点云颜色再次重影。
+
+## 真机测试失败
+
+先 source workspace，再执行：
 
 ```bash
-ros2 topic echo /diagnostics --once
-ros2 topic hz /k4a/depth/image_raw
+source /opt/ros/humble/setup.bash
+source ~/ros_ws/install/setup.bash
+~/ros_ws/src/k4a-ros/scripts/run_hardware_test.sh
 ```
 
-## 参数组合不受支持
-
-SDK 会在 `k4a_device_start_cameras` 阶段拒绝不支持的 resolution/depth mode/FPS 组合。
-先使用 [`k4a_ros/config/k4a.yaml`](../k4a_ros/config/k4a.yaml) 的默认值确认硬件正常，再逐项调整。
-
-## RViz2 看不到图像或点云
-
-- 确认 Fixed Frame 是 `k4a_depth_camera_optical_frame`。
-- 图像/点云使用 `SensorDataQoS`。在 RViz2 手动添加 Image 或 PointCloud2 display 时，将
-  Reliability Policy 设为 `Best Effort`；使用默认的 `Reliable` 会出现
-  `RELIABILITY_QOS_POLICY` 不兼容警告且收不到数据。
-- 推荐通过 `ros2 launch k4a_ros k4a.launch.py use_rviz:=true` 加载项目自带配置；该配置已为
-  点云、彩色、对齐彩色、红外与对齐深度图全部设置兼容的 QoS（Best Effort）。
-- `ros2 topic list` 和 `ros2 topic hz` 先确认数据实际发布。
-- 点云显示昂贵；远程桌面或软件渲染环境先只显示 Depth image。
-
-## 点云中屏幕图案出现在墙面（重影）
-
-启用 RGB 时，点云在 Color 相机几何下生成，遮挡边界不再把前景纹理复制到背景表面；若仍观察到
-重影，确认运行的是当前版本驱动且 `color_enabled: true`。
-
-以下现象属于传感器物理特性，与驱动无关：
-
-- `/k4a/aligned_color_to_depth` 在遮挡边界仍可能有数像素的重投影拉伸，这是 Color→Depth
-  视图差的预期表现。
-- 黑色或高反射屏幕会产生深度空洞，使点云在对应区域缺失。
-
-原因与实机对比见 [彩色点云的坐标系与遮挡处理](COLOR_POINT_CLOUD.md)。
-
-## `run_hardware_test.sh` 失败
-
-脚本会输出并保留日志路径。查看末尾：
-
-```bash
-tail -n 100 /tmp/k4a_ros_hardware_test.*.log
-```
-
-若已有 `/k4a/driver` 在运行，先正常停止原进程再执行一键测试，避免设备独占冲突。
+脚本会输出保留的 `/tmp/k4a_ros_hardware_test.*.log` 路径。
