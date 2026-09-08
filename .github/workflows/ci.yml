@@ -81,6 +81,7 @@ jobs:
     env:
       ACCEPT_EULA: Y
       DEBIAN_FRONTEND: noninteractive
+      XDG_CACHE_HOME: /tmp/k4a-cache
 
     steps:
       - name: Check out repository
@@ -113,10 +114,12 @@ jobs:
 
       - name: Verify authorized recovery archive entry
         run: |
+          source dependencies/azure-kinect-sdk-1.4.2.env
+          sdk_cache="${XDG_CACHE_HOME}/k4a-ros"
           mkdir -p dependencies/cache dependencies/source
-          cp /root/.cache/k4a-ros/libk4a1.4_1.4.2_amd64.deb dependencies/cache/
-          cp /root/.cache/k4a-ros/libk4a1.4-dev_1.4.2_amd64.deb dependencies/cache/
-          cp -a /root/.cache/k4a-ros/source/Azure-Kinect-Sensor-SDK \
+          cp "${sdk_cache}/${SDK_RUNTIME_FILENAME}" dependencies/cache/
+          cp "${sdk_cache}/${SDK_DEVEL_FILENAME}" dependencies/cache/
+          cp -a "${sdk_cache}/source/Azure-Kinect-Sensor-SDK" \
             dependencies/source/
           ./tools/package_sdk_recovery_bundle.sh --accept-sdk-license
           archive="$(find dist/sdk-recovery -name '*.tar.gz')"
